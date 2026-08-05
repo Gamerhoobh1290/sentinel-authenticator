@@ -1,0 +1,43 @@
+# Sentinel Authenticator — Cargo workspace
+#
+# This workspace contains:
+#   - `crates/sentinel-core`  : Cryptography, OTP, vault, import, backup logic.
+#                               Independent of Tauri so it can be tested in CI
+#                               without platform UI dependencies.
+#   - `src-tauri`              : Tauri desktop shell. Depends on sentinel-core
+#                               via a path dependency. Built on Windows runners.
+#
+# `cargo test` at the workspace root runs all unit tests. The Tauri crate
+# will only build on platforms with its native deps (WebView2 on Windows,
+# webkit2gtk on Linux) — sentinel-core builds anywhere.
+
+[workspace]
+resolver = "2"
+members = ["crates/sentinel-core", "src-tauri"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+version = "0.1.0"
+rust-version = "1.77"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+
+# ─── Production hardening ───────────────────────────────────────
+# Strip debug symbols and panic=abort to keep the binary small and prevent
+# unwinding across the FFI boundary into WebView2.
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+
+[profile.dev]
+opt-level = 1
+debug = true

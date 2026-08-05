@@ -1,0 +1,42 @@
+# cargo-audit configuration for Sentinel Authenticator
+#
+# All warnings listed here are in transitive dependencies that are either:
+#   1. Linux-only (GTK3/gtk-rs bindings — not in the Windows build)
+#   2. Unmaintained but not vulnerable (unic-*, proc-macro-error)
+#
+# None are actual security vulnerabilities (all are "unmaintained" or "unsound"
+# informational advisories). We track them here so that if a real vulnerability
+# appears in any of these crates, cargo-audit will still report it.
+#
+# The Windows production build does NOT include any of the GTK3/gtk-rs crates.
+
+[advisories]
+ignore = [
+    # ── gtk-rs GTK3 bindings (Linux dev only — not in Windows build) ──
+    "RUSTSEC-2024-0411", # gdkwayland-sys
+    "RUSTSEC-2024-0412", # gdk
+    "RUSTSEC-2024-0413", # atk
+    "RUSTSEC-2024-0414", # gdkx11-sys
+    "RUSTSEC-2024-0415", # gtk
+    "RUSTSEC-2024-0416", # atk-sys
+    "RUSTSEC-2024-0417", # gdkx11
+    "RUSTSEC-2024-0418", # gdk-sys
+    "RUSTSEC-2024-0419", # gtk-sys
+    "RUSTSEC-2024-0420", # gtk3-macros
+    "RUSTSEC-2024-0427", # glib-sys
+    "RUSTSEC-2024-0428", # gobject-sys
+    "RUSTSEC-2024-0429", # glib (unsound VariantStrIter — Linux only)
+    "RUSTSEC-2024-0430", # pango
+    "RUSTSEC-2024-0431", # pango-sys
+    "RUSTSEC-2024-0432", # cairo-sys-rs
+
+    # ── unic-* Unicode utility crates (transitive via phf) ──
+    "RUSTSEC-2025-0075", # unic-common
+    "RUSTSEC-2025-0080", # unic-ucd-ident
+    "RUSTSEC-2025-0081", # unic-char-range
+    "RUSTSEC-2025-0098", # unic-char-property
+    "RUSTSEC-2025-0100", # unic-ucd-version
+
+    # ── Other unmaintained transitive deps ──
+    "RUSTSEC-2024-0370", # proc-macro-error (deprecated, transitive)
+]

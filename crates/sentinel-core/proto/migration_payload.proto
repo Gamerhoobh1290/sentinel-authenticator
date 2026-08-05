@@ -1,0 +1,70 @@
+// Google Authenticator migration payload schema.
+//
+// Source: Google's published `otpauth-migration` format used by the
+// "Transfer accounts" → "Export accounts" QR-code flow in the official
+// Google Authenticator Android/iOS app.
+//
+// This .proto is reverse-engineered from publicly documented behaviour
+// (see docs/GOOGLE_IMPORT.md for references) and is intentionally minimal —
+// only fields Sentinel needs to import accounts safely.
+//
+// Field numbers MUST NOT be changed — they are wire-compatible with what
+// Google Authenticator emits. Renames are safe; tag numbers are not.
+//
+// References:
+//   - https://github.com/google/google-authenticator-android source
+//   - Public community documentation of the migration payload
+
+syntax = "proto3";
+
+package migration;
+
+// Top-level payload encoded as base64 in the otpauth-migration:// URI's
+// `data=` parameter.
+message MigrationPayload {
+  // Repeated: one per exported account.
+  repeated OtpParameters otp_parameters = 1;
+  // Number of QR codes in this transfer batch (1 if single QR).
+  optional int32 batch_size = 2;
+  // 0-based index of this QR within the batch.
+  optional int32 batch_index = 3;
+  // Stable ID shared across all QRs in the same batch.
+  optional int32 batch_id = 4;
+}
+
+message OtpParameters {
+  // Raw secret bytes (NOT base32-encoded — they are already decoded bytes).
+  bytes secret = 1;
+  // Account name (e.g. "alice@example.com").
+  string name = 2;
+  // Issuer (e.g. "GitHub").
+  string issuer = 3;
+  // Algorithm: 0=SHA1 (default), 1=SHA256, 2=SHA512, 3=MD5 (rejected).
+  Algorithm algorithm = 4;
+  // Number of digits: 1=6, 2=8. Other values rejected.
+  DigitCount digits = 5;
+  // OTP type: 1=HOTP, 2=TOTP.
+  OtpType type = 6;
+  // HOTP counter — only meaningful when type=HOTP.
+  optional int64 counter = 7;
+
+  enum Algorithm {
+    ALGORITHM_UNSPECIFIED = 0;
+    ALGORITHM_SHA1 = 1;
+    ALGORITHM_SHA256 = 2;
+    ALGORITHM_SHA512 = 3;
+    ALGORITHM_MD5 = 4; // Sentinel rejects this.
+  }
+
+  enum DigitCount {
+    DIGIT_COUNT_UNSPECIFIED = 0;
+    DIGIT_COUNT_SIX = 1;
+    DIGIT_COUNT_EIGHT = 2;
+  }
+
+  enum OtpType {
+    OTP_TYPE_UNSPECIFIED = 0;
+    OTP_TYPE_HOTP = 1;
+    OTP_TYPE_TOTP = 2;
+  }
+}

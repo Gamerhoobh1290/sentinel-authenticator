@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────
+   Sentinel Authenticator — Global stylesheet
+   Design tokens are CSS variables so theme switching is a single
+   attribute swap on <html data-theme="…">. No JS re-render needed.
+   ───────────────────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    /* Default to dark — see [data-theme="light"] override below */
+    color-scheme: dark;
+    --bg: 18 18 22;
+    --bg-elevated: 28 28 34;
+    --bg-subtle: 38 38 46;
+    --border: 56 56 66;
+    --border-strong: 76 76 88;
+    --fg: 244 244 246;
+    --fg-muted: 178 178 188;
+    --fg-subtle: 130 130 142;
+    --accent: 96 165 250; /* Windows accent-ish blue */
+    --accent-fg: 8 12 24;
+    --accent-hover: 118 175 253;
+    --danger: 239 68 68;
+    --danger-fg: 255 255 255;
+    --success: 34 197 94;
+    --warning: 234 179 8;
+  }
+
+  [data-theme="light"] {
+    color-scheme: light;
+    --bg: 247 248 250;
+    --bg-elevated: 255 255 255;
+    --bg-subtle: 240 241 244;
+    --border: 222 224 230;
+    --border-strong: 198 201 211;
+    --fg: 24 26 32;
+    --fg-muted: 86 90 102;
+    --fg-subtle: 130 134 145;
+    --accent: 56 132 230;
+    --accent-fg: 255 255 255;
+    --accent-hover: 38 116 217;
+    --danger: 220 38 38;
+    --danger-fg: 255 255 255;
+    --success: 22 163 74;
+    --warning: 202 138 4;
+  }
+
+  /* High-contrast mode respects Windows accessibility settings */
+  @media (prefers-contrast: more) {
+    :root {
+      --border: 200 200 200;
+      --border-strong: 255 255 255;
+      --fg: 255 255 255;
+      --bg: 0 0 0;
+    }
+    [data-theme="light"] {
+      --border: 60 60 60;
+      --border-strong: 0 0 0;
+      --fg: 0 0 0;
+      --bg: 255 255 255;
+    }
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    margin: 0;
+    font-family:
+      Inter,
+      "Segoe UI Variable",
+      "Segoe UI",
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    user-select: none;
+  }
+
+  /* Reduced-motion: kill all transitions/animations */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Visible focus ring — never remove without replacement */
+  :focus-visible {
+    outline: 2px solid rgb(var(--accent));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Scrollbars — subtle, native-feeling */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--border));
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--border-strong));
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+
+  /* Inputs allow selection — copy-paste is core UX */
+  input,
+  textarea {
+    user-select: text;
+  }
+}
+
+@layer components {
+  /* Reusable card surface */
+  .card {
+    @apply rounded-xl border border-border bg-bg-elevated shadow-card;
+  }
+
+  .card-hover {
+    @apply transition-colors duration-160 hover:border-border-strong hover:shadow-card-hover;
+  }
+}

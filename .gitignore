@@ -1,0 +1,62 @@
+# ─────────────────────────────────────────────────────────────
+# Sentinel Authenticator — .gitignore
+# ─────────────────────────────────────────────────────────────
+
+# Workspace metadata not part of the deliverable
+skills/
+upload/
+.env
+.env.*
+!.env.example
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+coverage/
+.eslintcache
+
+# Rust / Cargo
+target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+
+# Build / packaging output
+release/
+*.msi
+*.exe
+*.nupkg
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test artifacts
+*.sentinelbak
+*.vault
+vault.bin
+test-vault.bin
+
+# Local-only secrets/fixtures (never commit real secrets)
+/secrets/
+/fixtures/real/

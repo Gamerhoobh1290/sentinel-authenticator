@@ -1,0 +1,137 @@
+# Sentinel Authenticator — Windows build & release.
+#
+# Builds the production Windows NSIS + MSI installers on windows-latest.
+# Triggered manually (workflow_dispatch) or on tag pushes (v*).
+#
+# Artifacts are uploaded to GitHub's Actions artifact store. To get the
+# installer: Actions tab → run this workflow → download the artifact ZIP.
+#
+# Code signing: NOT configured by default. If you have a code-signing
+# certificate, set the following repository secrets and the workflow will
+# sign the installer:
+#   WINDOWS_CERTIFICATE_PFX_BASE64  — base64-encoded .pfx
+#   WINDOWS_CERTIFICATE_PASSWORD    — the .pfx password
+# Unsigned installers will trigger Windows SmartScreen on first run — see
+# docs/RELEASE.md for guidance.
+
+name: Build Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+env:
+  RUST_BACKTRACE: 1
+  CARGO_TERM_COLOR: always
+  PROTOC: /usr/local/bin/protoc
+
+jobs:
+  build-windows:
+    name: Build Sentinel Authenticator (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+          components: rustfmt, clippy
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          version: "25.1"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm run test
+
+      - name: Run frontend typecheck + lint
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run format:check
+
+      - name: Run Rust tests (sentinel-core)
+        run: cargo test -p sentinel-core --all-targets
+
+      - name: Run Rust clippy (sentinel-core)
+        run: cargo clippy -p sentinel-core --all-targets -- -D warnings
+
+      - name: Run Rust clippy (Tauri app)
+        run: cargo clippy -p sentinel-authenticator --all-targets -- -D warnings
+
+      - name: Format check
+        run: cargo fmt --all --check
+
+      - name: Install code-signing certificate (if provided)
+        if: env.WINDOWS_CERTIFICATE_PFX_BASE64 != ''
+        env:
+          WINDOWS_CERTIFICATE_PFX_BASE64: ${{ secrets.WINDOWS_CERTIFICATE_PFX_BASE64 }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          $pfxPath = Join-Path $env:RUNNER_TEMP "cert.pfx"
+          [System.IO.File]::WriteAllBytes($pfxPath, [System.Convert]::FromBase64String($env:WINDOWS_CERTIFICATE_PFX_BASE64))
+          $password = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText
+          Import-PfxCertificate -FilePath $pfxPath -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          Write-Host "Certificate imported."
+
+      - name: Build Tauri app (production)
+        run: cargo tauri build --target x86_64-pc-windows-msvc
+
+      - name: Locate installer artifacts
+        id: locate
+        shell: pwsh
+        run: |
+          $nsis = Get-ChildItem -Path src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis -Filter "Sentinel-Authenticator-Setup.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          $msi  = Get-ChildItem -Path src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi  -Filter "*.msi" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($nsis) { Write-Host "NSIS: $($nsis.FullName)" } else { Write-Host "NSIS not found" }
+          if ($msi)  { Write-Host "MSI:  $($msi.FullName)"  } else { Write-Host "MSI not found"  }
+          "nsis_path=$($nsis.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "msi_path=$($msi.FullName)"   | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Upload NSIS installer
+        if: steps.locate.outputs.nsis_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sentinel-Authenticator-Setup-exe
+          path: ${{ steps.locate.outputs.nsis_path }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload MSI installer
+        if: steps.locate.outputs.msi_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sentinel-Authenticator-Setup-msi
+          path: ${{ steps.locate.outputs.msi_path }}
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ steps.locate.outputs.nsis_path }}
+            ${{ steps.locate.outputs.msi_path }}
+          draft: true
+          name: Sentinel Authenticator ${{ github.ref_name }}
+          body: |
+            Sentinel Authenticator ${{ github.ref_name }}
+
+            **⚠️ Unsigned build** — Windows SmartScreen will warn on first launch.
+            See docs/RELEASE.md for verification and signing guidance.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

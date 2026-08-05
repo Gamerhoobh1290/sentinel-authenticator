@@ -1,0 +1,56 @@
+[package]
+name = "sentinel-authenticator"
+version = "0.1.0"
+description = "Sentinel — a local-first, encrypted 2FA authenticator for Windows."
+authors = ["Sentinel"]
+license = "MIT"
+repository = ""
+default-run = "sentinel-authenticator"
+edition = "2021"
+rust-version = "1.77"
+
+# ─── Lint config ────────────────────────────────────────────────
+# cargo clippy -- -D warnings enforces these. Run via `cargo clippy`.
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+# Allow: we explicitly use `expect` with descriptive messages in security-
+# sensitive code paths; that's preferred over `?` in many places.
+expect_used = "allow"
+# Allow: panicking on programmer errors (e.g. invariant violations) is fine.
+panic = "allow"
+# Allow: `mod foo;` is sometimes clearer than `mod foo {}`.
+module_inception = "allow"
+# Allow: many of our public fns return Results; that's expected.
+missing_errors_doc = "allow"
+
+[lints.rust]
+# Deny unsafe code unless explicitly allowed per-block.
+unsafe_code = "deny"
+# Warn on dead code — never silently leave unused security scaffolding.
+dead_code = "warn"
+unused_imports = "warn"
+
+# ─── Dependencies (will grow in subsequent milestones) ──────────
+[dependencies]
+sentinel-core = { path = "../crates/sentinel-core" }
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-clipboard-manager = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-os = "2"
+tauri-plugin-process = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+dirs = "5"
+getrandom = "0.2"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+# ─── Feature flags ──────────────────────────────────────────────
+# `devtools` is gated so it can never ship in a release build.
+[features]
+default = []
+devtools = ["tauri/devtools"]
