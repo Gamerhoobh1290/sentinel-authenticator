@@ -1,10 +1,7 @@
-<<<<<<< HEAD
 # Sentinel Authenticator
 
 > A local-first, fully offline desktop two-factor authentication (2FA) app for Windows.
 
-[![CI](https://github.com/sentinel/sentinel-authenticator/actions/workflows/ci.yml/badge.svg)](./.github/workflows/ci.yml)
-[![Windows build](https://github.com/sentinel/sentinel-authenticator/actions/workflows/release-windows.yml/badge.svg)](./.github/workflows/release-windows.yml)
 
 **Status: early development — milestone 1 (scaffold + design system).** Many features described below are planned; see the [Roadmap](#roadmap) section.
 
